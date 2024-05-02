@@ -5,13 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enhanced Image Generator with Webcam</title>
     <style>
-        /* #videoContainer {
-            position: relative;
-            width: 512px; 
-            height: 512px;
-            overflow: hidden;
-            margin: auto; 
-        } */
         body {
             background-color: #191f24;
             color: gainsboro;
@@ -108,7 +101,6 @@
     <div id="buttonDiv">
         <button id="startButton">Start Camera</button>
         <select id="cameraSelect">Camera:</select>
-        <!-- <button id="toggleCamera">Toggle Camera</button> -->
     </div>
     <div id="buttonDiv">
         <button id="captureButton">Augment</button>
@@ -136,7 +128,6 @@
             <br>
             <label for="keepBackground">Keep Background:</label>
             <input type="checkbox" id="keepBackground">
-            <!-- <br> -->
             
         </div>
         <form id="uploadForm">
@@ -249,8 +240,6 @@
         const generateButton = document.getElementById('generateButton');
         const overlayImage = document.getElementById('overlayImage');
         let imageBlob;
-
-        // document.getElementById('toggleCamera').addEventListener('click', switchCamera);
 
         let currentStream = null;
         let currentDeviceId = null;
