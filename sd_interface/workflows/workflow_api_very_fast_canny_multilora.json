@@ -1,0 +1,248 @@
+{
+  "10": {
+    "inputs": {
+      "ckpt_name": "perfectWorld_v6Baked.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "12": {
+    "inputs": {
+      "text": "embedding:easynegative, watermark, text, cars",
+      "clip": [
+        "48",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "13": {
+    "inputs": {
+      "vae_name": "vae-ft-mse-840000-ema-pruned.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "14": {
+    "inputs": {
+      "seed": 101251891397428,
+      "steps": 4,
+      "cfg": 1,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": [
+        "48",
+        0
+      ],
+      "positive": [
+        "38",
+        0
+      ],
+      "negative": [
+        "38",
+        1
+      ],
+      "latent_image": [
+        "16",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "15": {
+    "inputs": {
+      "image": "webcam_image.png",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "16": {
+    "inputs": {
+      "pixels": [
+        "22",
+        0
+      ],
+      "vae": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode"
+    }
+  },
+  "17": {
+    "inputs": {
+      "samples": [
+        "14",
+        0
+      ],
+      "vae": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "20": {
+    "inputs": {
+      "lora_name": "HyperSD/Hyper-SD15-4steps-lora.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "10",
+        0
+      ],
+      "clip": [
+        "10",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "21": {
+    "inputs": {
+      "text": "(masterpiece:1.2), (best quality,:1.2), 8k, HDR, ultra detailed, woman, in new york, ",
+      "clip": [
+        "48",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "22": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "width": 512,
+      "height": 512,
+      "crop": "disabled",
+      "image": [
+        "31",
+        0
+      ]
+    },
+    "class_type": "ImageScale",
+    "_meta": {
+      "title": "Upscale Image"
+    }
+  },
+  "31": {
+    "inputs": {
+      "amount": 1,
+      "image": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "RepeatImageBatch",
+    "_meta": {
+      "title": "RepeatImageBatch"
+    }
+  },
+  "35": {
+    "inputs": {
+      "images": [
+        "17",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "38": {
+    "inputs": {
+      "strength": 0.5,
+      "start_percent": 0,
+      "end_percent": 0.5,
+      "positive": [
+        "21",
+        0
+      ],
+      "negative": [
+        "12",
+        0
+      ],
+      "control_net": [
+        "44",
+        0
+      ],
+      "image": [
+        "42",
+        0
+      ]
+    },
+    "class_type": "ACN_AdvancedControlNetApply",
+    "_meta": {
+      "title": "Apply Advanced ControlNet 🛂🅐🅒🅝"
+    }
+  },
+  "42": {
+    "inputs": {
+      "low_threshold": 200,
+      "high_threshold": 300,
+      "resolution": 512,
+      "image": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "Inference_Core_CannyEdgePreprocessor",
+    "_meta": {
+      "title": "[Inference.Core] Canny Edge"
+    }
+  },
+  "44": {
+    "inputs": {
+      "control_net_name": "control_v11p_sd15_canny_fp16.safetensors"
+    },
+    "class_type": "ControlNetLoaderAdvanced",
+    "_meta": {
+      "title": "Load Advanced ControlNet Model 🛂🅐🅒🅝"
+    }
+  },
+  "48": {
+    "inputs": {
+      "lora_name": "detail_sd15_lora.safetensors",
+      "strength_model": 0.2,
+      "strength_clip": 0.4,
+      "model": [
+        "20",
+        0
+      ],
+      "clip": [
+        "20",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  }
+}

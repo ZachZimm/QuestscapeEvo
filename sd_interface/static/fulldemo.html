@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Image Generator with Webcam</title>
+    <style>
+        /* #videoContainer {
+            position: relative;
+            width: 512px; 
+            height: 512px;
+            overflow: hidden;
+            margin: auto; 
+        } */
+        body {
+            background-color: #191f24;
+            color: gainsboro;
+            align-items: center;
+        }
+        input {
+            background-color: lightgrey;
+            color:black;
+        }
+        input[type="checkbox"] {
+            background-color: lightgrey;
+            accent-color: lightgrey;
+            color-scheme: dark;
+            color:black;
+
+        }
+        option {
+            background-color: lightgrey;
+            color:black;
+        }
+        select {
+            background-color: lightgrey;
+            color:black;
+        }
+        input[type="range"] {
+            background-color: lightgrey;
+            color:black;
+        }
+        button {
+            /* background-color: #4CAF50; */
+            background-color: #76ABAE;
+            color: white;
+            padding: 10px 10px;
+            margin: 4px 0;
+            /* border: none; */
+            cursor: pointer;
+            width: 33%;
+        }
+
+        #videoContainer {
+            position: relative;
+            width: 100%; /* Adjust width to be responsive */
+            height: 100%; /* Adjust height to be responsive */
+            max-width: 512px; 
+            height: 512px; 
+            /* overflow: hidden; */
+            margin: auto; /* Center the video container */
+        }
+        #video, #overlayImage, #previousImage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            margin:auto;
+            object-fit: cover;
+        }
+        #startButton, #captureButton, #generateButton, #stopButton, #toggleCamera {
+            display: block;
+            margin: 10px auto;
+            width: 25%;
+        }
+        #networkSettingCollapseButton, #backgroundSettingCollapseButton, #generationSettingCollapseButton {
+            display: block;
+            margin: 4px auto; 
+            background-color: #203537;
+            color: white;
+            width: 45%;
+        }
+        #buttonDiv {
+            text-align: center;
+            display: flex;
+            justify-content: center;
+        }
+        #photoButton {
+            display: block;
+            margin: 10px auto;
+        }
+        #controlPanel {
+            text-align: center;
+            margin-top: 10px;
+        }
+        #cameraSelect {
+            width: 25%;
+            display: block;
+            margin: 10px auto;
+        }
+    </style>
+</head>
+<body >
+    <div id="buttonDiv">
+        <button id="startButton">Start Camera</button>
+        <select id="cameraSelect">Camera:</select>
+        <!-- <button id="toggleCamera">Toggle Camera</button> -->
+    </div>
+    <div id="buttonDiv">
+        <button id="captureButton">Augment</button>
+        <button id="stopButton">Stop Augmentation</button>
+
+    </div>
+
+    <div id="videoContainer">
+        <video id="video" autoplay playsinline muted></video>
+        <img id="previousImage" src="" alt="Previous Image" style="display: none;">
+        <img id="overlayImage" src="" alt="Overlay Image" style="display:none;">
+    </div>
+    <button id="photoButton" disabled="true">Capture!</button>
+    
+    <div id="controlPanel">
+        <button type="button" id="backgroundSettingCollapseButton">Show Background Settings</button>
+        <div id="backgroundSettings" style="display: none">
+            <label for="opacitySlider">Adjust Background Opacity:</label>
+            <input type="range" id="opacitySlider" min="0" max="1" step="0.01" value="1">
+            <br>
+            <label for="liveBackground">Live Background:</label>
+            <input type="checkbox" id="liveBackground">
+            <label for="hideAugmentation">Hide Augmentation:</label>
+            <input type="checkbox" id="hideAugmentation">
+            <br>
+            <label for="keepBackground">Keep Background:</label>
+            <input type="checkbox" id="keepBackground">
+            <!-- <br> -->
+            
+        </div>
+        <form id="uploadForm">
+        <button type="button" id="generationSettingCollapseButton">Hide Generation Settings</button>
+        <div id="generationSettings">
+        
+            <label>Extra prompt:</label>
+	        <input type="text" id="customPrompt"></input>
+            <label for="denoise">Denoise:</label>
+            <input type="number" id="denoise" value="0.5" min="0.01" max="1">
+            <div>
+                <label>ControlNet:</label>
+                <br>
+                <label>End %:</label>
+                <input type="number" id="cnEndPercent" value="0.75" min="0.01" max="1">
+                <label>Strength</label>
+                <input type="number" id="cnStrength" value="0.75" min="0.01" max="1">
+            </div>
+            <br>
+            <label for="landmarkType">Subject:</label>
+            <select id="landmarkType">
+                <option value="">(none)</option>
+                <option value="man">Man</option>
+                <option value="woman">Woman</option>
+                <option value="government building">Government Building</option>
+                <option value="post office building">Post Office Building</option>
+                <option value="student union building">Student Union Building</option>
+                <option value="swan">Swan</option>
+            </select>
+            <br>
+            <label for="themePrompt">Theme Prompt:</label>
+            <select id="themePrompt">
+                <option value="none">(none)</option>
+                <option value="americana">Americana</option>
+                <option value="ancient roman">Ancient Roman</option>
+                <option value="modernist architecture">Modernist Architecture</option>
+                <option value="illustration">Illustration</option>
+                <option value="shadowheart">Shadowheart</option>
+                <option value="tr0llface">Tr0llface</option>
+            </select>
+            
+            <br>
+            <label for="checkpoint">Model:</label>
+            <select id="checkpoint">
+                <option value="crossroads_v10AlphaNoVae.safetensors">Crossroads</option>
+                <option value="counterfeitV30_v30.safetensors">Counterfeit</option>
+                <option value="revAnimated_v2Rebirth.safetensors">Rev Animated</option>
+                <option value="realcartoonPixar_v10.safetensors">Real Cartoon</option>
+                <option value="realisticFantasy_v20.safetensors">Realistic Fantasy</option>
+                <option value="epicrealism_naturalSinRC1VAE.safetensors">Epic Realism</option>
+                <option value="epicphotogasm_ultimateFidelity.safetensors">Epic Photo</option>
+                <option value="truetolifesdLCM_v11.safetensors">"True to Life"</option>
+                <option value="perfectWorld_v6Baked.safetensors">Perfect World</option>
+                <option value="permissivebeauty_v3LCMKinkyreality.safetensors">Permissive Beauty</option>
+                <option value="dreamshaper_8.safetensors">Dream Shaper</option>
+                <option value="Dream Toon.safetensors">Dream Toon</option>
+                <option value="Toon Vision.safetensors">Toon Vision</option>
+                <option value="realDream_13Beta2.safetensors">Real Dream</option>
+                <option value="meinamix_meinaV11.safetensors">MeinaMix</option>
+                <option value="babes_20.safetensors">ToonMix</option>
+                <option value="architectureExterior_v40Exterior.safetensors">Exterior Architecture</option>
+                <option value="architectureInterior_v100.safetensors">Interior Architecture</option>
+                <option value="Dream Porn.safetensors">DP</option>
+
+                <option value="dreamshaperXL_v21TurboDPMSDE.safetensors">Dream Shaper XL</option>
+                <option value="dreamshaperXL_lightningDPMSDE.safetensors">Dream Shaper Lightning</option>
+            </select>
+            <br>
+        <br>
+        <div>
+            <label for="quest_id">ID:</label>
+            <input type="number" id="quest_id" value="1" min="1" max="99999999">
+            <label for="sub_id">Sub_ID:</label>
+            <input type="number" id="sub_id" value="1" min="1" max="99999999">
+        </div>
+        </form>
+        </div>
+        <button type="button" id="networkSettingCollapseButton">Show Network Settings</button>
+        <div id="collapsableContent" style="display: none">
+        
+            <label for="serverAddress">Address:</label>
+            <select id="serverAddress">
+                <option value="https://host.zzimm.com">host.zzimm.com</option>
+                <option value="https://lab">lab</option>
+                <option value="https://192.168.1.212">192.168.1.212</option>
+                <option value="https://localhost">localhost</option>
+            </select>
+                <br>
+            <label for="serverPort">Port:</label>
+            <select id="serverPort">
+                <option value="443">443</option>
+                <option value="8080">8080</option>
+                <option value="8080">80</option>
+            </select>
+            <br> 
+        
+            <lablel for="shouldDownscale">Downscale for Upload: </lablel>
+            <input type="checkbox" id="shouldDownscale" checked="true">
+            <br>
+            <label for="compressionValue">Upload Quality Value: </label>
+            <input type="number" id="compressionValue" value="0.6" min="0.1" max="1" step="0.1">
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const video = document.getElementById('video');
+        const startButton = document.getElementById('startButton');
+        const captureButton = document.getElementById('captureButton');
+        const generateButton = document.getElementById('generateButton');
+        const overlayImage = document.getElementById('overlayImage');
+        let imageBlob;
+
+        // document.getElementById('toggleCamera').addEventListener('click', switchCamera);
+
+        let currentStream = null;
+        let currentDeviceId = null;
+        let allCameras = [];
+        let cameraIndex = 0;
+
+        function stopCurrentVideoStream() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        function switchCamera() {
+            if (allCameras.length === 0) return;
+
+            if (cameraIndex >= allCameras.length) { cameraIndex = 0; }
+            currentDeviceId = allCameras[cameraIndex].deviceId;
+            startCamera(currentDeviceId);
+            cameraIndex++;
+        }
+
+        function switchCameraById(id) { // unused
+            if (allCameras.length === 0) return;
+            currentDeviceId = allCameras[id].deviceId;
+            startCamera(currentDeviceId);
+        }
+
+        function switchCameraByIndex(device) {
+                console.log(allCameras);
+                console.log(device);
+                if (allCameras.length === 0) return;
+                currentDeviceId = device.deviceId;
+                startCamera(currentDeviceId);
+            }
+
+        function startCamera(deviceId) {
+            const constraints = {
+                video: { 
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    width: { ideal: 512 }, // Maintain the same size as before
+                    height: { ideal: 512 }
+                }
+                
+
+            };
+            stopCurrentVideoStream(); // Stop the current stream if it's running
+
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    currentStream = stream;
+                    video.srcObject = stream;
+                    video.play();
+                }).catch(err => {
+                    console.error("Error accessing the camera: ", err);
+                    alert("Cannot access the camera, please check device settings.");
+                });
+        }
+
+        function listCameras() {
+            navigator.mediaDevices.enumerateDevices()
+                .then(devices => {
+                    allCameras = devices.filter(device => device.kind === 'videoinput');
+                    const cameraSelect = document.getElementById('cameraSelect');
+                    cameraSelect.innerHTML = '';
+                    // populate the camera select dropdown
+                    allCameras.forEach((camera, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.text = camera.label || `Camera ${index + 1}`;
+                        cameraSelect.appendChild(option);
+                    });
+
+                    if (allCameras.length > 0) {
+                        switchCamera(); // Start with the first camera
+                    }
+                }).catch(err => {
+                    console.error("Error listing devices.", err);
+                });
+        }
+        document.getElementById('cameraSelect').addEventListener('change', function() {
+            this.selectedIndex = this.value;
+            switchCameraByIndex(allCameras[this.value]);
+            document.getElementById('cameraSelect').value = this.value;
+        });
+
+        document.getElementById('startButton').addEventListener('click', listCameras); // Start by listing cameras
+
+        document.getElementById('opacitySlider').addEventListener('input', function() {
+            video.style.opacity = this.value;
+            previousImage.style.opacity = this.value;
+        });        
+
+        // function uploadImage(){
+        //     const generation_endpoint = 'generate-images/'
+        //     const formData = new FormData(document.getElementById('uploadForm'));
+        //     formData.append('image', imageBlob);
+        //     formData.append('id', document.getElementById('quest_id').value);
+        //     const subIdInput = document.getElementById('sub_id');
+        //     let currentSubId = parseInt(subIdInput.value, 10);
+        //     formData.append('sub_id', document.getElementById('sub_id').value);
+        //     subIdInput.value = currentSubId + 1;  // Increment the sub_id
+	    //     formData.append('denoise', document.getElementById('denoise').value);
+        //     formData.append('landmark_type', document.getElementById('landmarkType').value);
+        //     formData.append('theme_prompt', document.getElementById('themePrompt').value);
+        //     formData.append('mode', document.getElementById('mode').value);
+	    //     const server_address = document.getElementById('serverAddress').value;
+        //     // API call to server to generate image
+        //     fetch(server_address + generation_endpoint, {
+        //         method: 'POST',
+        //         body: formData
+        //     }).then(response => response.json())
+        //     .then(data => {
+        //         overlayImage.src = server_address + data.images;
+        //         overlayImage.style.display = 'block';
+        //     }).catch(error => {
+        //         console.error('Error:', error);
+        //     });
+        // }
+
+        // captureButton.addEventListener('click', function() {
+        //     const canvas = document.createElement('canvas');
+        //     const scale = Math.min(video.videoWidth, video.videoHeight) / 512;
+        //     canvas.width = canvas.height = 512;
+        //     const ctx = canvas.getContext('2d');
+        //     ctx.drawImage(video, (video.videoWidth - 512 * scale) / 2, (video.videoHeight - 512 * scale) / 2, 512 * scale, 512 * scale, 0, 0, 512, 512);
+        //     canvas.toBlob(blob => {
+        //         imageBlob = blob;
+        //         overlayImage.style.display = 'none';
+        //         uploadImage()
+        //     }, 'image/png');
+
+        // });
+
+        let continueLoop = false; // Flag to control the loop
+        let previousPhotoUrl = ''; // Store the second-most-recent photo URL
+        let live_background = false; // Flag to control the live background
+        let hideAugmentation = false;
+
+        function startAugmentationLoop() {
+            continueLoop = true;
+            photoButon = document.getElementById('photoButton');
+            photoButon.disabled = false;
+            console.log('Starting augmentation loop');
+            takeAndUploadImage();
+        }
+
+        function stopAugmentationLoop() {
+            continueLoop = false;
+        }
+
+        function takeAndUploadImage() {
+            if (!continueLoop) return; // Stop the loop if flagged
+            const canvas = document.createElement('canvas');
+            const scale = Math.min(video.videoWidth, video.videoHeight) / 512;
+            canvas.width = canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, (video.videoWidth - 512 * scale) / 2, (video.videoHeight - 512 * scale) / 2, 512 * scale, 512 * scale, 0, 0, 512, 512);
+            canvas.toBlob(blob => {
+                imageBlob = blob;
+                previousPhotoUrl = URL.createObjectURL(blob)
+                compressAndUploadImage(imageBlob);
+            }, 'image/png');
+            
+        }
+
+        function compressAndUploadImage(blob) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = () => {
+                shouldDownscale = document.getElementById('shouldDownscale').checked;
+                if (shouldDownscale) {
+                    // Set canvas dimensions
+                    canvas.width = img.width / 2; // Compressing by reducing resolution to half
+                    canvas.height = img.height / 2;
+                }
+                
+                // Draw image on canvas
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                qualityValue = document.getElementById('compressionValue').value;
+                    if (qualityValue == "0") {
+                        qualityValue = "0.1";
+                    }
+                    qualityValue = parseFloat(qualityValue);
+                // Convert canvas to Blob
+                canvas.toBlob(compressedBlob => {
+                    uploadAndRepeat(URL.createObjectURL(compressedBlob)); // Upload compressed image
+                }, 'image/jpeg', qualityValue); // Adjust quality from 0 to 1 (lower means more compression)
+                
+            };
+            
+            img.src = URL.createObjectURL(blob);
+        }
+
+        let lastDenoise = 0.3;
+        let lastCNEndPercent = 0.75;
+        let lastCNStrength = 0.75;
+
+        function uploadAndRepeat(newImageUrl) {
+            let startTime = new Date().getTime();
+            const formData = new FormData(document.getElementById('uploadForm'));
+            formData.append('image', imageBlob);
+            formData.append('id', document.getElementById('quest_id').value);
+            const subIdInput = document.getElementById('sub_id');
+            let currentSubId = parseInt(subIdInput.value, 10);
+            formData.append('sub_id', document.getElementById('sub_id').value);
+            if (subIdInput.value <= 1250) {
+                subIdInput.value = currentSubId + 1;  // Increment the sub_id    
+            }
+            else {
+                subIdInput.value = 1;
+            }
+            
+            // if 'denoise' is not a number, use the last denoise value
+            if (isNaN(document.getElementById('denoise').value) || document.getElementById('denoise').value > 1 || document.getElementById('denoise').value < 0.01){
+                console.log('Using last denoise value:', lastDenoise);
+                formData.append('denoise', lastDenoise);
+            }
+            else {
+                if (document.getElementById('denoise').value != lastDenoise) {
+                    console.log('Using new denoise value:', document.getElementById('denoise').value);
+                }
+                formData.append('denoise', document.getElementById('denoise').value);
+                lastDenoise = document.getElementById('denoise').value;
+            }
+
+            if (isNaN(document.getElementById('cnEndPercent').value) || document.getElementById('cnEndPercent').value > 1 || document.getElementById('cnEndPercent').value < 0.01) {
+                console.log('Using last cnEndPercent value:', lastCNEndPercent);
+                formData.append('cn_end_percent', lastCNEndPercent);
+            }
+            else {
+                if (document.getElementById('cnEndPercent').value != lastCNEndPercent) {
+                    console.log('Using new cnEndPercent value:', document.getElementById('cnEndPercent').value);
+                }
+                formData.append('cn_end_percent', document.getElementById('cnEndPercent').value);
+                lastCNEndPercent = document.getElementById('cnEndPercent').value;
+            }
+
+            if (isNaN(document.getElementById('cnStrength').value) || document.getElementById('cnStrength').value > 1 || document.getElementById('cnStrength').value < 0.01) {
+                console.log('Using last cnStrength value:', lastCNStrength);
+                formData.append('cn_strength', lastCNStrength);
+            }
+            else {
+                if (document.getElementById('cnStrength').value != lastCNStrength) {
+                    console.log('Using new cnStrength value:', document.getElementById('cnStrength').value);
+                }
+                formData.append('cn_strength', document.getElementById('cnStrength').value);
+                lastCNStrength = document.getElementById('cnStrength').value;
+            }
+
+            // formData.append('cn_end_percent', document.getElementById('cnEndPercent').value);
+            // formData.append('cn_strength', document.getElementById('cnStrength').value);
+
+            formData.append('landmark_type', document.getElementById('landmarkType').value);
+            formData.append('theme_prompt', document.getElementById('themePrompt').value);
+	        formData.append('custom_prompt', document.getElementById('customPrompt').value);
+            formData.append('checkpoint', document.getElementById('checkpoint').value);
+            formData.append('mode', 'very_fast_canny');
+            formData.append('keep_background', document.getElementById('keepBackground').checked);
+            const server_address = document.getElementById('serverAddress').value;
+            const server_port = document.getElementById('serverPort').value;
+            const generation_endpoint = 'generate-images/';
+
+            fetch(server_address + ':' + server_port + '/' + generation_endpoint, {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                console.log(data);
+                if (data.status === 'success') {
+                    const newImage = new Image(); // Create a new Image object to preload the image
+                    newImage.onload = () => { // Set up an event listener for when the image loads
+                        overlayImage.src = newImage.src; // Update the overlay image only after new image has loaded
+                        overlayImage.style.display = 'block';
+                        // set video to show the image at previousPhotoUrl
+                        // previousPhotoUrl = newImageUrl;
+                        if (continueLoop) {
+                            setTimeout(takeAndUploadImage, 0); // Continue loop after a delay
+                            // end the timer
+                            let endTime = new Date().getTime();
+                            console.log('Time taken:', (endTime - startTime), 'ms');
+                        }
+                        updateBackgroundDisplay();
+                    };
+                    newImage.src = server_address + ':' + server_port + '/' + data.images;
+                } else {
+                    console.error('Error in API data:', data.detail);
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                if (continueLoop) {
+                    setTimeout(takeAndUploadImage, 1000); // Try again after a delay
+                }
+            });
+        }
+
+
+        document.getElementById('liveBackground').addEventListener('change', function() {
+            if (this.checked) {
+                live_background = true;
+            } else {
+                live_background = false;
+            }
+            updateBackgroundDisplay();
+
+        });
+
+        document.getElementById('hideAugmentation').addEventListener('change', function() {
+            if (this.checked) {
+                hideAugmentation = true;
+            } else {
+                hideAugmentation = false;
+            }
+        });
+
+
+        function updateBackgroundDisplay() {
+            const video = document.getElementById('video');
+            const previousImage = document.getElementById('previousImage');
+            if (live_background) {
+                // video.style.display = 'block';
+                video.style.opacity = document.getElementById('opacitySlider').value;
+                previousImage.style.display = 'none';
+            } else {
+                // video.style.display = 'none';
+                video.style.opacity = 0;
+                if (previousPhotoUrl) {
+                    previousImage.src = previousPhotoUrl; // Only update src if there is a URL
+                    previousImage.style.display = 'block';
+                }
+            }
+            if (hideAugmentation) {
+                overlayImage.style.display = 'none';
+            } else {
+                overlayImage.style.display = 'block';
+            }
+        }
+
+        function addHiddenCheckpoints() {
+            // Check condition for hidden options
+            if (document.getElementById('serverAddress').value != 'https://lab') {
+                return;
+            }
+            // Add hidden options for custom checkpoints
+            let hiddenCheckpoints = { 'Toon You': 'toonyou_beta6.safetensors', 'Porn Toon': 'Porn Toon.safetensors', 'Toony Porn': 'Toony Porn.safetensors', 'Pornmaster Pro': 'pornmasterPro_newv15.safetensors' };
+            let hiddenLoras = ['Hayley Atwell.safetensors','HannaHowo-Shurik_RealPersonTraining_4LV2.safetensors', 'DI_belle_delphine_v1.safetensors', 'Dreamscape-000008.safetensors', 'Grillz.safetensors', 'jessicaalba_ti.pt', 'Ahegaoo.safetensors', 'breastsout24_rvkwi.safetensors', 'breasts_squeezed_together_v0.2.safetensors', 'DigitalLustV1.0.safetensors', 'ShirtliftXplicitContent.safetensors', 'jessicaalba_ti.pt', 'NsfwPovAllInOneLoraSdxl-000009.safetensors', 'Patrick Bateman 100.safetensors', 'Sexy_hanfu.safetensors', 'URPMv1.3_LORA_296.safetensors', 'tom-holland-v2-09.safetensors', 'topless v1a_fro0.95.safetensors', 'wrench_elven_arch-04.safetensors', 'xqc_v03_1.safetensors', 'interior02_SDLife_Chiasedamme_v2.0.safetensors', 'girl01_SDLife_Chiasedamme_v1.0.safetensors', 'girl02_SDLife_Chiasedamme_v1.0.safetensors', 'girlqq03_SDLife_Chiasedamme_v1.0.safetensors', 'Standing Sex v1.safetensors', 'white_sexy_see-through_lingerie.safetensors', 'Masturbation with Dildo v1.1.safetensors', 'nsfw-Tentacle-sd1-5.safetensors',];
+            for (let key in hiddenCheckpoints) {
+                let newOption = document.createElement('option');
+                newOption.value = hiddenCheckpoints[key];
+                newOption.text = key;
+                // only add the option if it doesn't already exist
+                if (!document.getElementById('checkpoint').querySelector(`option[value="${hiddenCheckpoints[key]}"]`)) {
+                    document.getElementById('checkpoint').appendChild(newOption);
+                }
+            };
+            for (let i = 0; i < hiddenLoras.length; i++) {
+                let newOption = document.createElement('option');
+                newOption.value = hiddenLoras[i];
+                newOption.text = hiddenLoras[i];
+                // only add the option if it doesn't already exist
+                if (!document.getElementById('themePrompt').querySelector(`option[value="${hiddenLoras[i]}"]`)) {
+                    document.getElementById('themePrompt').appendChild(newOption);
+                }
+            }     
+        }
+
+        function saveDisplayedImage() {
+            const link = document.createElement('a');
+            // link.href = overlayImage.src;
+            // Should composite with whatver is being displayed in the background, taking opacity into account
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.globalAlpha = document.getElementById('opacitySlider').value;
+            ctx.drawImage(previousImage, 0, 0, 512, 512);
+            ctx.globalAlpha = 1;
+            ctx.drawImage(overlayImage, 0, 0, 512, 512);
+            link.href = canvas.toDataURL('image/png');
+
+            link.download = 'generated_image.png';
+            link.click();
+        }
+
+        document.getElementById('serverAddress').addEventListener('change', addHiddenCheckpoints);
+
+        document.getElementById('captureButton').addEventListener('click', startAugmentationLoop);
+        document.getElementById('stopButton').addEventListener('click', stopAugmentationLoop);
+        document.getElementById('photoButton').addEventListener('click', saveDisplayedImage);
+        document.getElementById('networkSettingCollapseButton').addEventListener('click', function() {
+            let collapsableContent = document.getElementById('collapsableContent');
+            if (collapsableContent.style.display === 'none') {
+                collapsableContent.style.display = 'block';
+                document.getElementById('networkSettingCollapseButton').value = 'Hide Network Settings'
+            } else {
+                collapsableContent.style.display = 'none';
+                document.getElementById('networkSettingCollapseButton').value = 'Show Network Settings'
+            }
+        });
+        document.getElementById('backgroundSettingCollapseButton').addEventListener('click', function() {
+            let collapsableContent = document.getElementById('backgroundSettings');
+            if (collapsableContent.style.display === 'none') {
+                collapsableContent.style.display = 'block';
+                document.getElementById('backgroundSettingCollapseButton').value = 'Hide Background Settings'
+            } else {
+                collapsableContent.style.display = 'none';
+                document.getElementById('backgroundSettingCollapseButton').value = 'Show Background Settings'
+            }
+        });
+        document.getElementById('generationSettingCollapseButton').addEventListener('click', function() {
+            let collapsableContent = document.getElementById('generationSettings');
+            if (collapsableContent.style.display === 'none') {
+                collapsableContent.style.display = 'block';
+                document.getElementById('generationSettingCollapseButton').value = 'Hide Generation Settings'
+            } else {
+                collapsableContent.style.display = 'none';
+                document.getElementById('generationSettingCollapseButton').value = 'Show Generation Settings'
+            }
+        });
+        
+           
+    </script>
+</body>
+</html>

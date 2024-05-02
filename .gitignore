@@ -1,0 +1,4 @@
+sd_interface/venv/
+sd_interface/static/generated/*.png
+sd_interface/inputs/
+sd_interface/__pycache__/

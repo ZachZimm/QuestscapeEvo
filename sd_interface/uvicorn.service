@@ -1,0 +1,14 @@
+[Unit]
+Description=uvicorn service
+Requires=uvicorn.socket
+After=network.target
+
+[Service]
+User=zach
+Group=www-data
+WorkingDirectory=/home/zach/projects/Questscape/sd_interface
+ExecStart=/home/zach/projects/Questscape/sd_interface/venv/bin/uvicorn \
+            server:app --host 0.0.0.0 --port 8080 --reload
+
+[Install]
+WantedBy=multi-user.target
