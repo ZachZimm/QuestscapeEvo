@@ -504,7 +504,7 @@
             formData.append('mode', 'very_fast_canny');
             formData.append('keep_background', document.getElementById('keepBackground').checked);
             
-            const server_address = document.getElementById('serverAddress').value;
+            let server_address = document.getElementById('serverAddress').value;
             if (document.getElementById('useSSL').checked) {
                 server_address = 'https://' + server_address;
             } else {
