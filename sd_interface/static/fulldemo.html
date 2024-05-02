@@ -210,10 +210,10 @@
         
             <label for="serverAddress">Address:</label>
             <select id="serverAddress">
-                <option value="https://host.zzimm.com">host.zzimm.com</option>
-                <option value="https://lab">lab</option>
-                <option value="https://192.168.1.212">192.168.1.212</option>
-                <option value="https://localhost">localhost</option>
+                <option value="host.zzimm.com">host.zzimm.com</option>
+                <option value="lab">lab</option>
+                <option value="192.168.1.212">192.168.1.212</option>
+                <option value="localhost">localhost</option>
             </select>
                 <br>
             <label for="serverPort">Port:</label>
@@ -222,6 +222,8 @@
                 <option value="8080">8080</option>
                 <option value="8080">80</option>
             </select>
+            <label for="useSSL">Use SSL:</label>
+            <input type="checkbox" id="useSSL" checked="true">
             <br> 
         
             <lablel for="shouldDownscale">Downscale for Upload: </lablel>
@@ -501,7 +503,13 @@
             formData.append('checkpoint', document.getElementById('checkpoint').value);
             formData.append('mode', 'very_fast_canny');
             formData.append('keep_background', document.getElementById('keepBackground').checked);
+            
             const server_address = document.getElementById('serverAddress').value;
+            if (document.getElementById('useSSL').checked) {
+                server_address = 'https://' + server_address;
+            } else {
+                server_address = 'http://' + server_address;
+            }
             const server_port = document.getElementById('serverPort').value;
             const generation_endpoint = 'generate-images/';
 
