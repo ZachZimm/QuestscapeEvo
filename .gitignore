@@ -4,4 +4,4 @@ sd_interface/inputs/*
 sd_interface/__pycache__/
 sd_interface/client/__pycache__/
 sd_interface/image_*
-sd_interface/models/**
+sd_interface/models/
