@@ -494,26 +494,21 @@
                 lastCNStrength = document.getElementById('cnStrength').value;
             }
 
-            // formData.append('cn_end_percent', document.getElementById('cnEndPercent').value);
-            // formData.append('cn_strength', document.getElementById('cnStrength').value);
-
             formData.append('landmark_type', document.getElementById('landmarkType').value);
             formData.append('theme_prompt', document.getElementById('themePrompt').value);
 	        formData.append('custom_prompt', document.getElementById('customPrompt').value);
             formData.append('checkpoint', document.getElementById('checkpoint').value);
             formData.append('mode', 'very_fast_canny');
             formData.append('keep_background', document.getElementById('keepBackground').checked);
-            
-            let server_address = document.getElementById('serverAddress').value;
+            let server_protocol = 'http://';
             if (document.getElementById('useSSL').checked) {
-                server_address = 'https://' + server_address;
-            } else {
-                server_address = 'http://' + server_address;
-            }
+                server_protocol = 'https://';
+            } 
+            let server_address = document.getElementById('serverAddress').value;
             const server_port = document.getElementById('serverPort').value;
             const generation_endpoint = 'generate-images/';
 
-            fetch(server_address + ':' + server_port + '/' + generation_endpoint, {
+            fetch(server_protocol + server_address + ':' + server_port + '/' + generation_endpoint, {
                 method: 'POST',
                 body: formData
             }).then(response => response.json())
@@ -534,7 +529,7 @@
                         }
                         updateBackgroundDisplay();
                     };
-                    newImage.src = server_address + ':' + server_port + '/' + data.images;
+                    newImage.src = server_protocol + server_address + ':' + server_port + '/' + data.images;
                 } else {
                     console.error('Error in API data:', data.detail);
                 }
