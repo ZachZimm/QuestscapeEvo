@@ -6,7 +6,7 @@ class Webcam:
 
     def get_frame(self):
         ret, frame = self.cap.read()
-        return frame
+        return ret, frame
 
     def __del__(self):
         self.cap.release()

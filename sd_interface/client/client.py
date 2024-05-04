@@ -68,9 +68,7 @@ from PIL import Image, ImageTk
 cam = webcam.Webcam()
 # Function to handle the webcam and update the GUI
 def update_frame():
-    # ret, frame = cap.read()
-    ret = 1
-    frame = cam.get_frame()
+    ret, frame = cam.get_frame()
 
     if ret:
         # Resize the frame to ensure it's at least 512x512
