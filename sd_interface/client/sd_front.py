@@ -5,7 +5,7 @@ from PIL import Image
 from io import BytesIO
 from fastapi import File
 
-async def request_generated_frame(frame: Image, api_url: str, generation_config: dict): # Re implements the javascript function above
+async def request_generated_frame(frame: Image, api_url: str, generation_config: dict, verify: bool = True): # Re implements the javascript function above
     # Send a request to the api to generate a new frame
     # compress the image before uploading. Not resize, but compress
     print(f"Requesting new frame from {api_url}")
@@ -31,9 +31,11 @@ async def request_generated_frame(frame: Image, api_url: str, generation_config:
     files = {
         'image': ('frame.jpg', img_buffer, 'image/png')
     }
-    response = requests.post(api_url, data=data, files=files)
-    print(response.text)
-    return response
+    
+    response = requests.post(api_url, data=data, files=files, verify=verify)
+    response_json = response.json()
+    print(response_json)
+    return response_json
 
 async def main():
     id = 1
@@ -49,7 +51,7 @@ async def main():
 
     use_ssl = False
     # api_url = "host.zzimm.com"
-    api_url = "localhost"
+    api_url = "lab"
     # api_url = "lab"
     # port = ":443"
     port = ":8080"

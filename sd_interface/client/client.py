@@ -5,9 +5,14 @@ from PIL import Image, ImageTk
 import cv2
 import tkinter as tk
 from tkinter import Button
+import requests
+from io import BytesIO
 import webcam
 
-async def main():
+
+current_frame: Image = None
+
+async def main(frame: Image, connection_config: dict = {}):
     id = 1
     denoise = 0.5
     cn_end_percent = 0.75
@@ -19,15 +24,8 @@ async def main():
     mode = "very_fast_canny"
     keep_background = True
 
-    use_ssl = False
-    # api_url = "host.zzimm.com"
-    api_url = "localhost"
-    # api_url = "lab"
-    # port = ":443"
-    port = ":8080"
-    endpoint = "/generate-images/"
-    frame = np.zeros((512, 512, 3), np.uint8)  # RGB
-    frame = Image.fromarray(frame)
+    # frame = np.zeros((512, 512, 3), np.uint8) # RGB
+    # frame = Image.fromarray(frame)
     frames = 1
     generation_config = {
                 'id': id,
@@ -43,32 +41,44 @@ async def main():
                 'keep_background': keep_background
             }
 
-    if use_ssl:
-        protocol = "https://"
-    else:
-        protocol = "http://"
-
     # frame_dir = "../imports/webcam_image.png"
     # frame = Image.open(frame_dir)
-    cam = webcam.Webcam()
-    print("Created webcam object.")
-    frame = cam.get_frame()
+    # cam = webcam.Webcam()
+    # print("Created webcam object.")
+    # frame = cam.get_frame()
     # frame = Image.fromarray(frame)
 
-    await sd_front.request_generated_frame(frame=frame, 
-                            api_url=protocol+api_url+port+endpoint, 
-                            generation_config=generation_config)
+    response = await sd_front.request_generated_frame(frame=frame, 
+                            api_url=connection_config['protocol']+connection_config['api_url']+connection_config['port']+connection_config['endpoint'], 
+                            generation_config=generation_config,
+                            verify=not connection_config['is_local'])
+    
+    if response["status"] == 'success':
+        return response
+    else:
+        return {"error": "Failed to generate frame, status: {}".format(response['status'])}
 
-
-import cv2
-import tkinter as tk
-from tkinter import Button
-from PIL import Image, ImageTk
 
 cam = webcam.Webcam()
 # Function to handle the webcam and update the GUI
 def update_frame():
     ret, frame = cam.get_frame()
+    connection_config = {
+        'use_ssl': True,
+        'api_url': "lab",
+        'port': ":443",
+        'endpoint': '/generate-images/'
+        }
+
+    if connection_config['use_ssl']:
+        connection_config['protocol'] = "https://"
+    else:
+        connection_config['protocol'] = "http://"
+    if connection_config['api_url'] == 'lab' or connection_config['api_url'] == 'localhost' or '192.168' in connection_config['api_url']:
+        connection_config['is_local'] = True
+    else: connection_config['is_local'] = False
+    
+    num_frames = 0
 
     if ret:
         # Resize the frame to ensure it's at least 512x512
@@ -81,13 +91,30 @@ def update_frame():
         starty = height//2 - 256
         cropped_frame = frame[starty:starty+512, startx:startx+512]
 
-        # Convert to a format tkinter can use
-        # cv_img = cv2.cvtColor(cropped_frame, cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(cv_img)
+        cropped_frame_image = Image.fromarray(cropped_frame)
+        print(cropped_frame_image) # Should be an image
+
+        if num_frames == 0:
+            new_frame = asyncio.run(main(cropped_frame_image, connection_config))
+            num_frames += 1
+
+            
+            generated_image_url = connection_config['protocol'] +connection_config['api_url'] +connection_config['port'] +'/'+new_frame['images']
+            print(generated_image_url)
+            # generated_image = Image.open(generated_image_url)
+            # Download image from network url
+
+            response = requests.get(generated_image_url, verify=not connection_config['is_local'])
+            generated_image = Image.open(BytesIO(response.content))
+
+            # Convert to a format tkinter can use
+            cv_img = cv2.cvtColor(cropped_frame, cv2.COLOR_BGR2RGB)
+            # img = Image.fromarray(cv_img)
+            img = generated_image
         imgtk = ImageTk.PhotoImage(image=img)
         lmain.imgtk = imgtk
         lmain.configure(image=imgtk)
-    lmain.after(10, update_frame)  # Refresh the frame every 10 milliseconds
+    lmain.after(2, update_frame)  # Refresh the frame every 10 milliseconds
 
 # Function to capture and save the image
 def take_snapshot():
@@ -114,16 +141,21 @@ lmain.pack()
 btn_snapshot = Button(root, text="Take Snapshot", width=50, command=take_snapshot)
 btn_snapshot.pack(anchor=tk.CENTER, expand=True)
 
+# btn_start = Button(root, text="Start Video", width=50, command=update_frame)
+# btn_start.pack(anchor=tk.CENTER, expand=True)
+
 # Initialize the webcam
 cap = cv2.VideoCapture(0)  # 0 is typically the ID for the default webcam
 if not cap.isOpened():
     raise ValueError("Unable to open webcam")
 
+
+
 # Start the video process
 update_frame()
-
 # Start the GUI
 root.mainloop()
+
 
 # Release the camera when closing the app
 cap.release()
